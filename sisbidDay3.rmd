@@ -105,3 +105,49 @@ mean2 = function(x){mean(x/2)}
 
 ```
 
+## dplyr lab
+Download the samples data on the 1,000 genomes project: (https://www.dropbox.com/s/7bg2pvzmcv4di3v/1000genomes.xlsx?dl=0).
+Read the Final Phase Sequence Data sheet. Only read the data for the low coverage samples.
+```{r}
+# install.packages("readxl")
+library(readxl)
+dat <- read_excel("1000genomes.xlsx",4, skip = 1)
+dat <- dat[,1:7]
+names(dat)
+```
+
+Calculate total sequence by platform
+
+```{r}
+unique(dat$Platform)
+dat %>% group_by(Platform) %>% 
+     summarize(totalSequence = sum(`Total Sequence`, na.rm = T))
+```
+
+Do the same thing by sequencing center
+```{r}
+dat %>% group_by(Center) %>% 
+     summarize(totalSequence = sum(`Total Sequence`, na.rm = T))
+
+```
+
+Find the subset of samples that passed QC.
+
+```{r}
+filter(dat, !is.na(`Passed QC`))
+```
+
+Find the subset that passed QC and came from the BCM center
+```{r}
+dat %>% filter(!is.na(`Passed QC`)) %>%
+     filter(Center == "BCM")
+```
+
+Calculate the average aligned coverage for each population on the subset of samples that passed QC that came from the BCM.
+```{r}
+dat %>% filter(!is.na(`Passed QC`)) %>%
+     filter(Center == "BCM") %>% 
+     group_by(Population) %>%
+     summarize(AveAligned = mean(`Aligned Non Duplicated Coverage`))
+```
+
