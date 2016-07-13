@@ -1,0 +1,107 @@
+---
+title: "sisbidDay3"
+author: "Angie Boysen"
+date: "July 13, 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+##dplyr
+
+```{r}
+install.packages('gapminder')
+library(dplyr)
+library(gapminder)
+str(gapminder)
+gtbl = gapminder
+
+```
+
+filter
+```{r}
+glimpse(gtbl)
+filter(gtbl, lifeExp < 29)
+filter(gtbl, country == "Rwanda")
+```
+
+
+look at columns with select
+```{r select}
+select(gtbl,country,pop,continent)
+
+```
+
+look at arrange for re-ordering rows
+```{r}
+# arrange(gtbl,pop)
+# arrange(gtbl,desc(pop)) #Order in reverse
+arrange(gtbl, year, lifeExp) #Order by two things
+```
+
+Creating new variables with mutate
+```{r}
+gtbl = mutate(gtbl, newVar = (lifeExp / gdpPercap), newVar2 = newVar*2)
+select(gtbl,lifeExp,gdpPercap,newVar)
+distinct(gtbl) # spits out all unique rows - can detect duplucate rows/errors in database
+```
+
+sampling data with dplyr
+```{r}
+# set.seed(12345) #makes the randomness the same every time you run this
+sample_n(gtbl,3) # 3 random rows
+sample_frac(gtbl,0.5) # random 50%
+```
+
+## piping
+
+all of these dplyr functions have the first argument as the dataframe
+So if you chain a bunch of these together it works nicely because the output is always a dataframe that you can input into another function.
+
+%>% -- read as "then"
+
+These two pieces of code do the same thing:
+```{r}
+head(gtbl)
+gtbl %>% head()
+```
+
+Example: show me a random sample of the data for asian countries with life expectancy < 65.
+```{r}
+gtbl1 <- gtbl[gtbl$continent =="Asia",]
+gtbl2 <- gtbl1[gtbl1$lifeExp < 65,]
+gtbl3 <- gtbl2[sample(1:dim(gtbl2)[1],size=10),]
+gtbl3
+
+## OR
+random_sample <- gtbl %>% filter(continent =="Asia") %>%
+     filter(lifeExp <65) %>%
+     sample_n(10)
+random_sample
+
+## Can do Asia or Africa
+
+random_sample <- gtbl %>% filter(continent %in% c("Asia","Africa")) %>%
+     filter(lifeExp <65) %>%
+     sample_n(10)
+random_sample
+```
+
+Example2: Split, apply, combine
+
+What is the average life expectancy by continent?
+
+```{r}
+gtbl %>% group_by(continent) %>% summarize(aveLife = mean(lifeExp))
+
+## can do more than one thing
+gtbl %>% group_by(continent) %>% 
+     summarize(aveLife = mean(lifeExp), sdLife = sd(lifeExp))
+
+## can definte your own fucntion to use
+mean2 = function(x){mean(x/2)}
+
+```
+
