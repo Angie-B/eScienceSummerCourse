@@ -151,3 +151,63 @@ dat %>% filter(!is.na(`Passed QC`)) %>%
      summarize(AveAligned = mean(`Aligned Non Duplicated Coverage`))
 ```
 
+if you want to pipe but the function doesn't have the dataframe as the first argument you use the dot (.) to tell the function where the data is. Example:
+```{r lm}
+dat %>% lm(`Total Sequence` ~ Center, data = .)
+```
+
+## Merging datasets
+Superhero example
+```{r}
+superheroes <-
+  c("    name, alignment, gender,         publisher",
+    " Magneto,       bad,   male,            Marvel",
+    "   Storm,      good, female,            Marvel",
+    "Mystique,       bad, female,            Marvel",
+    "  Batman,      good,   male,                DC",
+    "   Joker,       bad,   male,                DC",
+    "Catwoman,       bad, female,                DC",
+    " Hellboy,      good,   male, Dark Horse Comics")
+
+superheroes <- read.csv(text = superheroes, strip.white = TRUE)
+superheroes
+
+publishers <- 
+  c("publisher, yr_founded",
+    "       DC,       1934",
+    "   Marvel,       1939",
+    "    Image,       1992")
+publishers <- read.csv(text = publishers, 
+strip.white = TRUE)
+publishers
+```
+
+Inner join
+(default joining on column with same name == publisher)
+```{r}
+ijsp <- inner_join(superheroes, publishers)
+ijsp
+```
+
+Left join
+```{r}
+ljsp = left_join(superheroes,publishers)
+ljsp
+```
+
+full join
+```{r}
+fjsp <- full_join(superheroes, publishers)
+fjsp
+```
+
+if the column names aren't exactly the same you use the by argument in join.
+```{r}
+names(publishers)
+publishers <- publishers %>% select(Publisher = publisher, yr_founded)
+names(publishers)
+fulljoin <- full_join(superheroes, publishers, by = c("publisher" = "Publisher"))
+fulljoin
+```
+
+
