@@ -209,5 +209,165 @@ names(publishers)
 fulljoin <- full_join(superheroes, publishers, by = c("publisher" = "Publisher"))
 fulljoin
 ```
+## Reshaping --
+Don't use reshape!
+Use tidry::gather
+
+```{r}
+library(tidyr)
+```
+
+
+## dplyr and databases
+```{r}
+# install.packages('babynames')
+# install.packages('pryr')
+library(dplyr)
+library(babynames)
+library(pryr)
+
+View(babynames)
+str(babynames)
+object_size(babynames)
+```
+
+sql lite database
+```{r}
+my_db <- src_sqlite("my_db.sqlite3", create = T)
+```
+put babies in the database
+``` {r}
+babys_sqlite <- copy_to(my_db,babynames, temporary = FALSE)
+src_tbls(my_db)
+```
+
+look at it
+```{r}
+tbl(my_db,"babynames")
+```
+
+Try some dplyr.
+We first specify the database,
+then we specify the table we want that is in the database,
+then we do our filtering and functions.
+
+The whole first line is just collecting commands and translating into sql
+Then the call of newtbl just pulls the first few rows, not the whole result.
+```{r}
+newtbl <- my_db %>%
+     tbl("babynames") %>%
+     filter(name == "Hilary")%>%
+     select(year,n,name)
+newtbl
+```
+
+If we want the whole result we need the collect function.
+Don't run collect yet if there are going to be 10million rows.
+```{r}
+newtbl <- my_db %>%
+     tbl("babynames") %>%
+     filter(name == "Hilary")%>%
+     select(year,n,name) %>% collect()
+newtbl
+```
+
+Get dimension
+```{r}
+my_db %>%
+     tbl("babynames") %>%
+     filter(name == "Hilary")%>%
+     select(year,n,name) %>% summarize(n=n())
+```
+
+get popular names.
+BUT rank (top_n) is not supported! So... collect before you run that function
+```{r}
+# popular = my_db %>%
+#      tbl("babynames") %>%
+#      group_by(name) %>%
+#      summarise(N = sum(n)) %>%
+#      arrange(desc(N)) %>% top_n(100)
+# popular
+## GIVES ERROR
+## SO...
+
+popular = my_db %>%
+     tbl("babynames") %>%
+     group_by(name) %>%
+     summarise(N = sum(n)) %>%
+     arrange(desc(N)) %>% 
+     collect() %>% top_n(100)
+popular
+```
+
+
+```{r}
+translate_sql(filter(name=="James"))
+translate_sql(mean(x))
+```
+
+how female
+```{r}
+how_female = my_db %>% 
+     tbl("babynames") %>% 
+     group_by(name) %>% 
+     summarize(m=mean(sex=="F"))
+how_female
+
+## What is the translation in sql?
+show_query(how_female)
+```
+
+### data.table
+
+For moderately sized stuff, this is the fastest way
+Use it like you use data.frames
+BUT it has funk syntax
+```{r}
+install.packages('data.table')
+library(data.table)
+library(readr)
+library(babynames)
+```
+
+writing a file
+```{r}
+write_csv(babynames,'babynames.csv')
+```
+
+reading a file - how long does it take
+```{r}
+system.time(read.csv('babynames.csv'))
+system.time(read_csv('babynames.csv'))
+system.time(fread('babynames.csv'))
+
+```
+
+Using DT objects
+```{r}
+baby_dt = fread('babynames.csv')
+class(baby_dt)
+female = baby_dt[sex=="F"]
+dim(female)
+baby_dt[sex=="F",.(n,name,prop)]
+
+```
+
+fancier uses
+```{r}
+baby_dt[sex=="F",.(name,mean(prop))]
+baby_dt[sex=="F",
+        .(name,mean(prop)),name]
+```
+
+re-assign
+calculate average proportion per name
+:= 
+```{r}
+baby_dt[sex=="F",
+        .(name,aveprop=mean(prop)),name]
+baby_dt[,aveprop:=mean(prop),name]
+baby_dt
+```
 
 
